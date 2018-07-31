@@ -38,7 +38,7 @@ script:
     if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
       figlet Master Branch Deploy;
 
-      export ENV=prod;
+      ENV=prod;
       echo "[INFO] Master branch was pushed or marged by feature branches";
       echo "[BUILD] Packer build.";
 
@@ -64,7 +64,7 @@ script:
     if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
       figlet Develop Branch Deploy;
 
-      export ENV=dev;
+      ENV=dev;
       echo "[INFO] Develop branch was pushed or marged by feature branches";
       echo "[BUILD] Packer build. Create AMI.";
 
@@ -96,7 +96,7 @@ script:
     if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
       figlet Master Pull Request Build;
 
-      export ENV=prod;
+      ENV=prod;
       echo "[INFO] Pull Request was created";
       echo "[BUILD] Create Stack...";
       DATE=$(date +"%Y%m%d%H%M%S");
@@ -115,8 +115,7 @@ script:
     if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
       figlet Develop Pull Request Build;
 
-      export ENV=dev;
-
+      ENV=dev;
       echo "[INFO] Pull Request was created";
       echo "[BUILD] Create Stack...";
       DATE=$(date +"%Y%m%d%H%M%S");
@@ -140,8 +139,8 @@ script:
   # Feature branch was pushed
   - |
     if [ "$TRAVIS_BRANCH" != "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      figlet Only Pushed;
-      figlet Nothing to do;
+      echo "[INFO] Only Pushed";
+      echo "[INFO] Nothing to do";
       echo "[INFO] Feature branch was pushed";
       echo "[INFO] Nothing to do anything";
     fi
