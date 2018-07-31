@@ -1,0 +1,540 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  This template deploys a VPC, with a pair of public and private subnets spread
+  across two Availability Zones. It deploys an Internet Gateway, with a default
+  route on the public subnets. It deploys a pair of NAT Gateways (one in each AZ),
+  and default routes for them in the private subnets.
+
+Parameters:
+  Environment:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+  WebInstanceAMI:
+    Type: AWS::EC2::Image::Id
+    Default: ami-b70554c8
+
+Conditions:
+  CreateProdResources: !Equals [ !Ref Environment, prod ]
+
+Mappings:
+  StackConfig:
+    # Default Instance Amazon Linux
+    EC2:
+      ImageId: ami-b70554c8
+    KeyPair:
+      KeyPairName: keypair
+
+Resources:
+
+  #  _   _ _____ _______        _____  ____  _  __
+  # | \ | | ____|_   _\ \      / / _ \|  _ \| |/ /
+  # |  \| |  _|   | |  \ \ /\ / / | | | |_) | ' /
+  # | |\  | |___  | |   \ V  V /| |_| |  _ <| . \
+  # |_| \_|_____| |_|    \_/\_/  \___/|_| \_\_|\_\
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.192.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref Environment
+
+  #  ___ _   _ _____ _____ ____  _   _ _____ _____
+  # |_ _| \ | |_   _| ____|  _ \| \ | | ____|_   _|
+  #  | ||  \| | | | |  _| | |_) |  \| |  _|   | |
+  #  | || |\  | | | | |___|  _ <| |\  | |___  | |
+  # |___|_| \_| |_| |_____|_| \_\_| \_|_____| |_|
+  #
+  #   ____    _  _____ _______        ___ __   __
+  #  / ___|  / \|_   _| ____\ \      / / \\ \ / /
+  # | |  _  / _ \ | | |  _|  \ \ /\ / / _ \\ V /
+  # | |_| |/ ___ \| | | |___  \ V  V / ___ \| |
+  #  \____/_/   \_\_| |_____|  \_/\_/_/   \_\_|
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref Environment
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  #  ____  _   _ ____  _   _ _____ _____
+  # / ___|| | | | __ )| \ | | ____|_   _|
+  # \___ \| | | |  _ \|  \| |  _|   | |
+  #  ___) | |_| | |_) | |\  | |___  | |
+  # |____/ \___/|____/|_| \_|_____| |_|
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.192.10.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Public Subnet (AZ1)
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.192.11.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Public Subnet (AZ2)
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.192.30.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Private Subnet (AZ1)
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.192.31.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Private Subnet (AZ2)
+
+  #  _   _    _  _____    ____    _  _____ _______        ___ __   __
+  # | \ | |  / \|_   _|  / ___|  / \|_   _| ____\ \      / / \\ \ / /
+  # |  \| | / _ \ | |   | |  _  / _ \ | | |  _|  \ \ /\ / / _ \\ V /
+  # | |\  |/ ___ \| |   | |_| |/ ___ \| | | |___  \ V  V / ___ \| |
+  # |_| \_/_/   \_\_|    \____/_/   \_\_| |_____|  \_/\_/_/   \_\_|
+
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnet2
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Public Routes
+
+  #  ____   ___  _   _ _____ _____   _____  _    ____  _     _____
+  # |  _ \ / _ \| | | |_   _| ____| |_   _|/ \  | __ )| |   | ____|
+  # | |_) | | | | | | | | | |  _|     | | / _ \ |  _ \| |   |  _|
+  # |  _ <| |_| | |_| | | | | |___    | |/ ___ \| |_) | |___| |___
+  # |_| \_\\___/ \___/  |_| |_____|   |_/_/   \_\____/|_____|_____|
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Private Routes (AZ1)
+
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Private Routes (AZ2)
+
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+
+  NoIngressSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "no-ingress-sg"
+      GroupDescription: "Security group with no ingress rule"
+      VpcId: !Ref VPC
+
+  #  ____  _____ ____ _   _ ____  ___ _______   __   ____ ____   ___  _   _ ____
+  # / ___|| ____/ ___| | | |  _ \|_ _|_   _\ \ / /  / ___|  _ \ / _ \| | | |  _ \
+  # \___ \|  _|| |   | | | | |_) || |  | |  \ V /  | |  _| |_) | | | | | | | |_) |
+  #  ___) | |__| |___| |_| |  _ < | |  | |   | |   | |_| |  _ <| |_| | |_| |  __/
+  # |____/|_____\____|\___/|_| \_\___| |_|   |_|    \____|_| \_\\___/ \___/|_|
+
+  PublicSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Sub ${Environment}-public-security-group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: "TCP"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 126.209.222.211/32
+          Description: "SoftbankAir"
+        - IpProtocol: "TCP"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 126.209.222.211/32
+          Description: "SoftbankAir"
+        - IpProtocol: "TCP"
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 126.209.222.211/32
+          Description: "SoftbankAir"
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-public-security-group
+
+  PrivateSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Sub ${Environment}-private-security-group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          SourceSecurityGroupId: !Ref PublicSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-private-security-group
+  PrivateSecurityGroupIngress:
+    DependsOn: PrivateSecurityGroup
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      # Private間はすべての通信を許可
+      GroupId: !Ref PrivateSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      SourceSecurityGroupId: !Ref PrivateSecurityGroup
+
+  #  ____    _    ____ _____ ___ ___  _   _   _   _  ___  ____ _____
+  # | __ )  / \  / ___|_   _|_ _/ _ \| \ | | | | | |/ _ \/ ___|_   _|
+  # |  _ \ / _ \ \___ \ | |  | | | | |  \| | | |_| | | | \___ \ | |
+  # | |_) / ___ \ ___) || |  | | |_| | |\  | |  _  | |_| |___) || |
+  # |____/_/   \_\____/ |_| |___\___/|_| \_| |_| |_|\___/|____/ |_|
+
+  BastionHostInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !FindInMap [ StackConfig, EC2, ImageId ]
+      InstanceType: t2.nano
+      KeyName: !FindInMap [ StackConfig, KeyPair, KeyPairName ]
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - !Ref PublicSecurityGroup
+          SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-bastion-host
+
+  #     _   _   _ _____ ___    ____   ____    _    _     ___ _   _  ____
+  #    / \ | | | |_   _/ _ \  / ___| / ___|  / \  | |   |_ _| \ | |/ ___|
+  #   / _ \| | | | | || | | | \___ \| |     / _ \ | |    | ||  \| | |  _
+  #  / ___ \ |_| | | || |_| |  ___) | |___ / ___ \| |___ | || |\  | |_| |
+  # /_/   \_\___/  |_| \___/  |____/ \____/_/   \_\_____|___|_| \_|\____|
+
+  WebServerGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: true
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      LaunchConfigurationName: !Ref LaunchConfig
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+      Tags:
+        - Key: Name
+          Value: web
+          PropagateAtLaunch: 'true'
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref WebInstanceAMI
+      SecurityGroups:
+        - !Ref PrivateSecurityGroup
+      InstanceType: t2.micro
+      KeyName: !FindInMap [ StackConfig, KeyPair, KeyPairName ]
+      # Prodcution環境ではオンデマンドインスタンスを採用する
+      # それ以外の環境ではスポットインスタンスを使用する
+      SpotPrice: !If [ CreateProdResources, !Ref "AWS::NoValue", 0.06 ]
+      # AutoScalingGroupにシグナルを送信することでEC2の作成が完了したことを通知する
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            #!/bin/bash -xe
+            yum update -y aws-cfn-bootstrap
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WebServerGroup --region ${AWS::Region}
+
+  SpotInstanceWebServerGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Condition: CreateProdResources
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      LaunchConfigurationName: !Ref SpotInstanceLaunchConfig
+      MinSize: 0
+      MaxSize: 5
+      DesiredCapacity: 0
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+      Tags:
+        - Key: Name
+          Value: web
+          PropagateAtLaunch: 'true'
+  SpotInstanceLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Condition: CreateProdResources
+    Properties:
+      ImageId: !Ref WebInstanceAMI
+      SecurityGroups:
+        - !Ref PrivateSecurityGroup
+      InstanceType: t2.micro
+      KeyName: !FindInMap [ StackConfig, KeyPair, KeyPairName ]
+      SpotPrice: 0.06
+
+  SpotInstanceWebServerScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Condition: CreateProdResources
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref SpotInstanceWebServerGroup
+      Cooldown: 60
+      ScalingAdjustment: 1
+  SpotInstanceWebServerScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Condition: CreateProdResources
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref SpotInstanceWebServerGroup
+      Cooldown: 60
+      ScalingAdjustment: -1
+  SpotInstanceCPUAlarmHigh:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProdResources
+    Properties:
+      AlarmDescription: Scale-up if CPU > 90% for 10 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 90
+      AlarmActions:
+      - !Ref SpotInstanceWebServerScaleUpPolicy
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref WebServerGroup
+      ComparisonOperator: GreaterThanThreshold
+  SpotInstanceCPUAlarmLow:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProdResources
+    Properties:
+      AlarmDescription: Scale-down if CPU < 70% for 10 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 70
+      AlarmActions:
+      - !Ref SpotInstanceWebServerScaleDownPolicy
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref WebServerGroup
+      ComparisonOperator: LessThanThreshold
+
+
+  #     _    _     ____
+  #    / \  | |   | __ )
+  #   / _ \ | |   |  _ \
+  #  / ___ \| |___| |_) |
+  # /_/   \_\_____|____/
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${Environment}-web-alb
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref PublicSecurityGroup
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      # SslPolicy: ELBSecurityPolicy-2016-08
+      # Certificates:
+      #   - CertificateArn: !Ref CertificateArn
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${Environment}-web-target-group
+      VpcId: !Ref VPC
+      Port: 80
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /health_check
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 300
+        - Key: stickiness.enabled
+          Value: 'false'
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: 86400
+      Tags:
+        - Key: Name
+          Value: alb
+
+  # Route53 (CNAME)
+  # InternalRecordset:
+  #   Type: 'AWS::Route53::RecordSetGroup'
+  #   Properties:
+  #     HostedZoneName: "example.com."
+  #     RecordSets:
+  #     - Name: example.com
+  #       Type: CNAME
+  #       TTL: '300'
+  #       ResourceRecords:
+  #         - !GetAtt ApplicationLoadBalancer.DNSName
+
+Outputs:
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref VPC
+
+  PublicSubnets:
+    Description: A list of the public subnets
+    Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ]]
+
+  PrivateSubnets:
+    Description: A list of the private subnets
+    Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]]
+
+  PublicSubnet1:
+    Description: A reference to the public subnet in the 1st Availability Zone
+    Value: !Ref PublicSubnet1
+
+  PublicSubnet2:
+    Description: A reference to the public subnet in the 2nd Availability Zone
+    Value: !Ref PublicSubnet2
+
+  PrivateSubnet1:
+    Description: A reference to the private subnet in the 1st Availability Zone
+    Value: !Ref PrivateSubnet1
+
+  PrivateSubnet2:
+    Description: A reference to the private subnet in the 2nd Availability Zone
+    Value: !Ref PrivateSubnet2
+
+  NoIngressSecurityGroup:
+    Description: Security group with no ingress rule
+    Value: !Ref NoIngressSecurityGroup

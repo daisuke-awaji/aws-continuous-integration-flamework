@@ -1,0 +1,31 @@
+{
+  "variables": {
+    "aws_access_key": "{{env `AWS_ACCESS_KEY`}}",
+    "aws_secret_key": "{{env `AWS_SECRET_KEY`}}"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "us-east-1",
+    "source_ami": "ami-b70554c8",
+    "instance_type": "t2.micro",
+    "ssh_username": "ec2-user",
+    "ami_name": "web {{timestamp}}",
+    "tags": {
+      "Name": "web-{{timestamp}}",
+      "OS_Version": "AmazonLinux2",
+      "Timestamp": "{{timestamp}}"
+    }
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "inline": [
+      "sudo easy_install pip",
+      "sudo pip install ansible"
+    ]
+   },{
+     "type": "ansible-local",
+     "playbook_file": "./middleware/ansible/setup.yml"
+  }]
+}
