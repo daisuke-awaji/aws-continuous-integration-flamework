@@ -1,3 +1,5 @@
+![batch](https://travis-ci.com/daisuke-awaji/aws.svg?branch=master)
+
 # Continuous Integration Flamework
 
 **Automatically Build: Rails apps on AWS used by Packer, Ansible and Cloudformation**
