@@ -58,5 +58,3 @@ def send_slack(message, username='satomi', emoji=':exclamation:'):
     except:
         print('Slack connection failed. Valid webhook?')
         return None
-
-lambda_handler("", "")
