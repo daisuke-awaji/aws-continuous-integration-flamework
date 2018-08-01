@@ -37,117 +37,117 @@ script:
   # | |  | |/ ___ \|  _ <| |_| | |___| |_| |
   # |_|  |_/_/   \_\_| \_\\____|_____|____/
 
-  # Master branch was pushed or marged by develop branches
-  - |
-    if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      figlet Master Branch Deploy;
-
-      ENV=prod;
-      echo "[INFO] Master branch was pushed or marged by feature branches";
-      echo "[BUILD] Packer build.";
-
-
-      packer build ./middleware/template.json >> out.log;
-      cat out.log;
-      AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
-      echo ${AMIID};
-
-
-      echo "[BUILD] Deploy Stack...";
-      aws cloudformation deploy \
-          --template-file=./cloudformation/template.yaml \
-          --stack-name ${ENV} \
-          --parameter-overrides Environment=${ENV} \
-          --parameter-overrides WebInstanceAMI=${AMIID} \
-          --capabilities CAPABILITY_IAM \
-          --region ${AWS_REGION};
-    fi
-
-  # Develop branch was pushed or marged by feature branches
-  - |
-    if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      figlet Develop Branch Deploy;
-
-      ENV=dev;
-      echo "[INFO] Develop branch was pushed or marged by feature branches";
-      echo "[BUILD] Packer build. Create AMI.";
-
-
-      packer build ./middleware/template.json >> out.log;
-      cat out.log;
-      AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
-      echo ${AMIID};
-
-
-      echo "[BUILD] Deploy Stack...";
-      aws cloudformation deploy \
-          --template-file=./cloudformation/template.yaml \
-          --stack-name ${ENV} \
-          --parameter-overrides Environment=${ENV} \
-          --parameter-overrides WebInstanceAMI=${AMIID} \
-          --capabilities CAPABILITY_IAM \
-          --region ${AWS_REGION};
-    fi
-
-  #  ____  _   _ _     _       ____  _____ ___  _   _ _____ ____ _____ ____
-  # |  _ \| | | | |   | |     |  _ \| ____/ _ \| | | | ____/ ___|_   _/ ___|
-  # | |_) | | | | |   | |     | |_) |  _|| | | | | | |  _| \___ \ | | \___ \
-  # |  __/| |_| | |___| |___  |  _ <| |__| |_| | |_| | |___ ___) || |  ___) |
-  # |_|    \___/|_____|_____| |_| \_\_____\__\_\\___/|_____|____/ |_| |____/
-
-  # Pull Requests was created for develop to master
-  - |
-    if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-      figlet Master Pull Request Build;
-
-      ENV=prod;
-      echo "[INFO] Pull Request was created";
-      echo "[BUILD] Create Stack...";
-      DATE=$(date +"%Y%m%d%H%M%S");
-
-      aws cloudformation create-change-set \
-          --template-body file://cloudformation/template.yaml \
-          --change-set-name "change-set-${DATE}" \
-          --stack-name ${ENV} \
-          --parameters ParameterKey=Environment,ParameterValue=${ENV} \
-          --capabilities CAPABILITY_IAM \
-          --region ${AWS_REGION};
-    fi
-
-  # Pull Requests was created for feature to develop
-  - |
-    if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-      figlet Develop Pull Request Build;
-
-      ENV=dev;
-      echo "[INFO] Pull Request was created";
-      echo "[BUILD] Create Stack...";
-      DATE=$(date +"%Y%m%d%H%M%S");
-
-      aws cloudformation create-change-set \
-          --template-body file://cloudformation/template.yaml \
-          --change-set-name "change-set-${DATE}" \
-          --stack-name ${ENV} \
-          --parameters ParameterKey=Environment,ParameterValue=${ENV} \
-          --capabilities CAPABILITY_IAM \
-          --region ${AWS_REGION};
-    fi
-
-
-  #   ___  _   _ _  __   __  ____  _   _ ____  _   _ _____ ____
-  #  / _ \| \ | | | \ \ / / |  _ \| | | / ___|| | | | ____|  _ \
-  # | | | |  \| | |  \ V /  | |_) | | | \___ \| |_| |  _| | | | |
-  # | |_| | |\  | |___| |   |  __/| |_| |___) |  _  | |___| |_| |
-  #  \___/|_| \_|_____|_|   |_|    \___/|____/|_| |_|_____|____/
-
-  # Feature branch was pushed
-  - |
-    if [ "$TRAVIS_BRANCH" != "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      echo "[INFO] Only Pushed";
-      echo "[INFO] Nothing to do";
-      echo "[INFO] Feature branch was pushed";
-      echo "[INFO] Nothing to do anything";
-    fi
+  # # Master branch was pushed or marged by develop branches
+  # - |
+  #   if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+  #     figlet Master Branch Deploy;
+  #
+  #     ENV=prod;
+  #     echo "[INFO] Master branch was pushed or marged by feature branches";
+  #     echo "[BUILD] Packer build.";
+  #
+  #
+  #     packer build ./middleware/template.json >> out.log;
+  #     cat out.log;
+  #     AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
+  #     echo ${AMIID};
+  #
+  #
+  #     echo "[BUILD] Deploy Stack...";
+  #     aws cloudformation deploy \
+  #         --template-file=./cloudformation/template.yaml \
+  #         --stack-name ${ENV} \
+  #         --parameter-overrides Environment=${ENV} \
+  #         --parameter-overrides WebInstanceAMI=${AMIID} \
+  #         --capabilities CAPABILITY_IAM \
+  #         --region ${AWS_REGION};
+  #   fi
+  #
+  # # Develop branch was pushed or marged by feature branches
+  # - |
+  #   if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+  #     figlet Develop Branch Deploy;
+  #
+  #     ENV=dev;
+  #     echo "[INFO] Develop branch was pushed or marged by feature branches";
+  #     echo "[BUILD] Packer build. Create AMI.";
+  #
+  #
+  #     packer build ./middleware/template.json >> out.log;
+  #     cat out.log;
+  #     AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
+  #     echo ${AMIID};
+  #
+  #
+  #     echo "[BUILD] Deploy Stack...";
+  #     aws cloudformation deploy \
+  #         --template-file=./cloudformation/template.yaml \
+  #         --stack-name ${ENV} \
+  #         --parameter-overrides Environment=${ENV} \
+  #         --parameter-overrides WebInstanceAMI=${AMIID} \
+  #         --capabilities CAPABILITY_IAM \
+  #         --region ${AWS_REGION};
+  #   fi
+  #
+  # #  ____  _   _ _     _       ____  _____ ___  _   _ _____ ____ _____ ____
+  # # |  _ \| | | | |   | |     |  _ \| ____/ _ \| | | | ____/ ___|_   _/ ___|
+  # # | |_) | | | | |   | |     | |_) |  _|| | | | | | |  _| \___ \ | | \___ \
+  # # |  __/| |_| | |___| |___  |  _ <| |__| |_| | |_| | |___ ___) || |  ___) |
+  # # |_|    \___/|_____|_____| |_| \_\_____\__\_\\___/|_____|____/ |_| |____/
+  #
+  # # Pull Requests was created for develop to master
+  # - |
+  #   if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+  #     figlet Master Pull Request Build;
+  #
+  #     ENV=prod;
+  #     echo "[INFO] Pull Request was created";
+  #     echo "[BUILD] Create Stack...";
+  #     DATE=$(date +"%Y%m%d%H%M%S");
+  #
+  #     aws cloudformation create-change-set \
+  #         --template-body file://cloudformation/template.yaml \
+  #         --change-set-name "change-set-${DATE}" \
+  #         --stack-name ${ENV} \
+  #         --parameters ParameterKey=Environment,ParameterValue=${ENV} \
+  #         --capabilities CAPABILITY_IAM \
+  #         --region ${AWS_REGION};
+  #   fi
+  #
+  # # Pull Requests was created for feature to develop
+  # - |
+  #   if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+  #     figlet Develop Pull Request Build;
+  #
+  #     ENV=dev;
+  #     echo "[INFO] Pull Request was created";
+  #     echo "[BUILD] Create Stack...";
+  #     DATE=$(date +"%Y%m%d%H%M%S");
+  #
+  #     aws cloudformation create-change-set \
+  #         --template-body file://cloudformation/template.yaml \
+  #         --change-set-name "change-set-${DATE}" \
+  #         --stack-name ${ENV} \
+  #         --parameters ParameterKey=Environment,ParameterValue=${ENV} \
+  #         --capabilities CAPABILITY_IAM \
+  #         --region ${AWS_REGION};
+  #   fi
+  #
+  #
+  # #   ___  _   _ _  __   __  ____  _   _ ____  _   _ _____ ____
+  # #  / _ \| \ | | | \ \ / / |  _ \| | | / ___|| | | | ____|  _ \
+  # # | | | |  \| | |  \ V /  | |_) | | | \___ \| |_| |  _| | | | |
+  # # | |_| | |\  | |___| |   |  __/| |_| |___) |  _  | |___| |_| |
+  # #  \___/|_| \_|_____|_|   |_|    \___/|____/|_| |_|_____|____/
+  #
+  # # Feature branch was pushed
+  # - |
+  #   if [ "$TRAVIS_BRANCH" != "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+  #     echo "[INFO] Only Pushed";
+  #     echo "[INFO] Nothing to do";
+  #     echo "[INFO] Feature branch was pushed";
+  #     echo "[INFO] Nothing to do anything";
+  #   fi
 
 after_success:
   - coveralls
