@@ -276,7 +276,7 @@ Resources:
           FromPort: -1
           ToPort: -1
           SourceSecurityGroupId: !Ref PublicSecurityGroup
-          Description: "Public Security Group -> Private Security Group is all ok."
+          Description: "PublicSecurityGroupToPrivateSecurityGroup"
       Tags:
         - Key: Name
           Value: !Sub ${Environment}-private-security-group
