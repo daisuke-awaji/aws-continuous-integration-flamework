@@ -13,7 +13,7 @@ before_script:
 before_install:
   # figlet
   - sudo apt-get install -y figlet
-  # awscli
+  # awscli, pytest
   - pip install -r requirements.txt
   # packer
   - sudo apt-get install -y unzip
@@ -27,6 +27,9 @@ before_install:
   - cd /home/travis/build/daisuke-awaji/aws/
 
 script:
+  # Cloudformation test
+  - pytest ./cloudformation/tests/test.py
+
   #  __  __    _    ____   ____ _____ ____
   # |  \/  |  / \  |  _ \ / ___| ____|  _ \
   # | |\/| | / _ \ | |_) | |  _|  _| | | | |
@@ -47,7 +50,7 @@ script:
       cat out.log;
       AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
       echo ${AMIID};
-      
+
 
       echo "[BUILD] Deploy Stack...";
       aws cloudformation deploy \
@@ -144,3 +147,6 @@ script:
       echo "[INFO] Feature branch was pushed";
       echo "[INFO] Nothing to do anything";
     fi
+
+after_success:
+  - coveralls
