@@ -1,4 +1,4 @@
-![batch](https://travis-ci.com/daisuke-awaji/aws.svg?branch=master)
+![batch](https://travis-ci.com/daisuke-awaji/aws.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/github/daisuke-awaji/aws/badge.svg?branch=master)](https://coveralls.io/github/daisuke-awaji/aws?branch=master)
 
 # Continuous Integration Flamework
 
