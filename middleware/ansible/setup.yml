@@ -1,5 +1,5 @@
 - hosts: all
-  sudo: yes
+  become: yes
   tasks:
    - name: install Apache
      yum: pkg={{item}} state=installed
