@@ -47,7 +47,7 @@ script:
       cat out.log;
       AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
       echo ${AMIID};
-
+      
 
       echo "[BUILD] Deploy Stack...";
       aws cloudformation deploy \

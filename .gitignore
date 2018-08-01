@@ -6,4 +6,7 @@ serverless/tests/unit/__pycache__/*
 serverless/*/__pycache__/*
 serverless/packaged.yaml
 cloudformation/.idea/
-cloudformation/.pytest_cache/
+cloudformation/.pytest_cache/*
+.idea/*
+cloudformation/tests/__pycache__/*
+	
