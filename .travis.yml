@@ -39,7 +39,7 @@ script:
   - coverage run ./cloudformation/tests/test.py
 
   # Ansible test
-  # - TODO: rake serverspec..?
+  - ansible-lint middleware/ansible/setup.yml
 
   #  __  __    _    ____   ____ _____ ____
   # |  \/  |  / \  |  _ \ / ___| ____|  _ \
