@@ -36,19 +36,19 @@ jobs:
     - stage: test
       script:
 
-        #    _____ _____ ____ _____   ____  _   _    _    ____  _____
-        # |_   _| ____/ ___|_   _| |  _ \| | | |  / \  / ___|| ____|
-        #   | | |  _| \___ \ | |   | |_) | |_| | / _ \ \___ \|  _|
-        #   | | | |___ ___) || |   |  __/|  _  |/ ___ \ ___) | |___
-        #   |_| |_____|____/ |_|   |_|   |_| |_/_/   \_\____/|_____|
+      #    _____ _____ ____ _____   ____  _   _    _    ____  _____
+      # |_   _| ____/ ___|_   _| |  _ \| | | |  / \  / ___|| ____|
+      #   | | |  _| \___ \ | |   | |_) | |_| | / _ \ \___ \|  _|
+      #   | | | |___ ___) || |   |  __/|  _  |/ ___ \ ___) | |___
+      #   |_| |_____|____/ |_|   |_|   |_| |_/_/   \_\____/|_____|
 
-        # Cloudformation test
-        - coverage run ./cloudformation/tests/test.py
+      # Cloudformation test
+      - coverage run ./cloudformation/tests/test.py
 
-        # Ansible test
-        - ansible-lint middleware/ansible/setup.yml
+      # Ansible test
+      - ansible-lint middleware/ansible/setup.yml
 
-    - stage: pull request marged
+    - stage: pull request marged / Deploy stack
       script:
 
       #  __  __    _    ____   ____ _____ ____
@@ -66,7 +66,7 @@ jobs:
 
           echo "[INFO] Master branch was pushed or marged by feature branches";
           echo "[BUILD] Packer build.";
-          AMIID=$(packer-build)
+          AMIID=$(packer-build);
 
           echo "[BUILD] Deploy Stack...";
           cloudformation-deploy ${ENV} ${AMIID}
@@ -81,13 +81,13 @@ jobs:
 
           echo "[INFO] Develop branch was pushed or marged by feature branches";
           echo "[BUILD] Packer build. Create AMI.";
-          AMIID=$(packer-build)
+          AMIID=$(packer-build);
 
           echo "[BUILD] Deploy Stack...";
           cloudformation-deploy ${ENV} ${AMIID}
         fi
 
-    - stage: pull request created
+    - stage: pull request created / Create change set
       script:
 
       #  ____  _   _ _     _       ____  _____ ___  _   _ _____ ____ _____ ____
@@ -124,7 +124,7 @@ jobs:
           create-change-set ${ENV};
         fi
 
-    - stage: only pushed
+    - stage: only pushed / nothing to do
       script:
 
       #   ___  _   _ _  __   __  ____  _   _ ____  _   _ _____ ____
