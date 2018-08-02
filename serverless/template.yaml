@@ -54,7 +54,7 @@ Resources:
         Day:
           Type: Schedule
           Properties:
-            Schedule: cron(0 22 * * ? *)
+            Schedule: cron(0 13 * * ? *)
 
   StackDeleteNoticeIAMRole:
     Type: 'AWS::IAM::Role'
