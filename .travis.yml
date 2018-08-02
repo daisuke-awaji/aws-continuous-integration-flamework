@@ -69,7 +69,7 @@ jobs:
           AMIID=$(packer-build);
 
           echo "[BUILD] Deploy Stack...";
-          cloudformation-deploy ${ENV} ${AMIID}
+          cloudformation-deploy ${ENV} ${AMIID};
         fi
 
       # Develop branch was pushed or marged by feature branches
@@ -84,7 +84,7 @@ jobs:
           AMIID=$(packer-build);
 
           echo "[BUILD] Deploy Stack...";
-          cloudformation-deploy ${ENV} ${AMIID}
+          cloudformation-deploy ${ENV} ${AMIID};
         fi
 
     - stage: pull request created / Create change set
