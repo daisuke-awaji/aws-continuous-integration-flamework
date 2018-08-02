@@ -1,8 +1,40 @@
-describe-stacks() {
+is-stack-created() {
   ENV=$1
   stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
   if [ "${stack}" = "" ]; then
-    echo "[ERROR] stack is not exist.";
+    echo "[ERROR] Stack ${ENV} is not exist.";
     exit 0
   fi
+}
+
+create-change-set() {
+  ENV=$1;
+  DATE=$(date +"%Y%m%d%H%M%S");
+  aws cloudformation create-change-set \
+      --template-body file://cloudformation/template.yaml \
+      --change-set-name "change-set-${DATE}" \
+      --stack-name ${ENV} \
+      --parameters ParameterKey=Environment,ParameterValue=${ENV} \
+      --capabilities CAPABILITY_IAM \
+      --region ${AWS_REGION};
+}
+
+packer-build() {
+  packer build ./middleware/template.json >> out.log;
+  cat out.log;
+  AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
+  echo ${AMIID};
+  return ${AMIID}
+}
+
+cloudformation-deploy() {
+  ENV=$1
+  AMIID=$2
+  aws cloudformation deploy \
+      --template-file=./cloudformation/template.yaml \
+      --stack-name ${ENV} \
+      --parameter-overrides Environment=${ENV} \
+      --parameter-overrides WebInstanceAMI=${AMIID} \
+      --capabilities CAPABILITY_IAM \
+      --region ${AWS_REGION};
 }
