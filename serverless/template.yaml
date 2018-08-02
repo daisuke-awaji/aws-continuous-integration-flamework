@@ -9,7 +9,6 @@ Parameters:
   Environment:
     Description: An environment name that will be prefixed to resource names
     Type: String
-    Default: dev
     AllowedValues:
       - dev
       - prod

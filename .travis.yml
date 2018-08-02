@@ -60,7 +60,6 @@ script:
 
       echo "[INFO] Master branch was pushed or marged by feature branches";
       echo "[BUILD] Packer build.";
-
       AMIID=packer-build
 
       echo "[BUILD] Deploy Stack...";
@@ -76,7 +75,6 @@ script:
 
       echo "[INFO] Develop branch was pushed or marged by feature branches";
       echo "[BUILD] Packer build. Create AMI.";
-
       AMIID=packer-build
 
       echo "[BUILD] Deploy Stack...";
@@ -97,7 +95,6 @@ script:
       ENV=prod;
 
       is-stack-created ${ENV};
-
       echo "[INFO] Pull Request was created";
       echo "[BUILD] Create Stack...";
 
@@ -112,7 +109,6 @@ script:
       ENV=dev;
 
       is-stack-created ${ENV};
-
       echo "[INFO] Pull Request was created";
       echo "[BUILD] Create Stack...";
 
