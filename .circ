@@ -1,3 +1,5 @@
+## Defined Functions
+
 is-stack-created() {
   ENV=$1
   stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
@@ -24,7 +26,7 @@ packer-build() {
   cat out.log;
   AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
   echo ${AMIID};
-  return ${AMIID}
+  return ${AMIID};
 }
 
 cloudformation-deploy() {

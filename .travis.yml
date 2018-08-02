@@ -31,105 +31,116 @@ before_install:
   - source .circ
   - cat .circ
 
-script:
+jobs:
+  include:
+    - stage: test
+      script:
 
-  #    _____ _____ ____ _____   ____  _   _    _    ____  _____
-  # |_   _| ____/ ___|_   _| |  _ \| | | |  / \  / ___|| ____|
-  #   | | |  _| \___ \ | |   | |_) | |_| | / _ \ \___ \|  _|
-  #   | | | |___ ___) || |   |  __/|  _  |/ ___ \ ___) | |___
-  #   |_| |_____|____/ |_|   |_|   |_| |_/_/   \_\____/|_____|
+        #    _____ _____ ____ _____   ____  _   _    _    ____  _____
+        # |_   _| ____/ ___|_   _| |  _ \| | | |  / \  / ___|| ____|
+        #   | | |  _| \___ \ | |   | |_) | |_| | / _ \ \___ \|  _|
+        #   | | | |___ ___) || |   |  __/|  _  |/ ___ \ ___) | |___
+        #   |_| |_____|____/ |_|   |_|   |_| |_/_/   \_\____/|_____|
 
-  # Cloudformation test
-  - coverage run ./cloudformation/tests/test.py
+        # Cloudformation test
+        - coverage run ./cloudformation/tests/test.py
 
-  # Ansible test
-  - ansible-lint middleware/ansible/setup.yml
+        # Ansible test
+        - ansible-lint middleware/ansible/setup.yml
 
-  #  __  __    _    ____   ____ _____ ____
-  # |  \/  |  / \  |  _ \ / ___| ____|  _ \
-  # | |\/| | / _ \ | |_) | |  _|  _| | | | |
-  # | |  | |/ ___ \|  _ <| |_| | |___| |_| |
-  # |_|  |_/_/   \_\_| \_\\____|_____|____/
+    - stage: pull request marged
+      script:
 
-  # Master branch was pushed or marged by develop branches
-  - |
-    if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      figlet Master Branch Deploy;
+      #  __  __    _    ____   ____ _____ ____
+      # |  \/  |  / \  |  _ \ / ___| ____|  _ \
+      # | |\/| | / _ \ | |_) | |  _|  _| | | | |
+      # | |  | |/ ___ \|  _ <| |_| | |___| |_| |
+      # |_|  |_/_/   \_\_| \_\\____|_____|____/
 
-      ENV=prod;
+      # Master branch was pushed or marged by develop branches
+      - |
+        if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+          figlet Master Branch Deploy;
 
-      echo "[INFO] Master branch was pushed or marged by feature branches";
-      echo "[BUILD] Packer build.";
-      AMIID=$(packer-build)
+          ENV=prod;
 
-      echo "[BUILD] Deploy Stack...";
-      cloudformation-deploy ${ENV} ${AMIID}
-    fi
+          echo "[INFO] Master branch was pushed or marged by feature branches";
+          echo "[BUILD] Packer build.";
+          AMIID=$(packer-build)
 
-  # Develop branch was pushed or marged by feature branches
-  - |
-    if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      figlet Develop Branch Deploy;
+          echo "[BUILD] Deploy Stack...";
+          cloudformation-deploy ${ENV} ${AMIID}
+        fi
 
-      ENV=dev;
+      # Develop branch was pushed or marged by feature branches
+      - |
+        if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+          figlet Develop Branch Deploy;
 
-      echo "[INFO] Develop branch was pushed or marged by feature branches";
-      echo "[BUILD] Packer build. Create AMI.";
-      AMIID=$(packer-build)
+          ENV=dev;
 
-      echo "[BUILD] Deploy Stack...";
-      cloudformation-deploy ${ENV} ${AMIID}
-    fi
+          echo "[INFO] Develop branch was pushed or marged by feature branches";
+          echo "[BUILD] Packer build. Create AMI.";
+          AMIID=$(packer-build)
 
-  #  ____  _   _ _     _       ____  _____ ___  _   _ _____ ____ _____ ____
-  # |  _ \| | | | |   | |     |  _ \| ____/ _ \| | | | ____/ ___|_   _/ ___|
-  # | |_) | | | | |   | |     | |_) |  _|| | | | | | |  _| \___ \ | | \___ \
-  # |  __/| |_| | |___| |___  |  _ <| |__| |_| | |_| | |___ ___) || |  ___) |
-  # |_|    \___/|_____|_____| |_| \_\_____\__\_\\___/|_____|____/ |_| |____/
+          echo "[BUILD] Deploy Stack...";
+          cloudformation-deploy ${ENV} ${AMIID}
+        fi
 
-  # Pull Requests was created for develop to master
-  - |
-    if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-      figlet Master Pull Request Build;
+    - stage: pull request created
+      script:
 
-      ENV=prod;
+      #  ____  _   _ _     _       ____  _____ ___  _   _ _____ ____ _____ ____
+      # |  _ \| | | | |   | |     |  _ \| ____/ _ \| | | | ____/ ___|_   _/ ___|
+      # | |_) | | | | |   | |     | |_) |  _|| | | | | | |  _| \___ \ | | \___ \
+      # |  __/| |_| | |___| |___  |  _ <| |__| |_| | |_| | |___ ___) || |  ___) |
+      # |_|    \___/|_____|_____| |_| \_\_____\__\_\\___/|_____|____/ |_| |____/
 
-      is-stack-created ${ENV};
-      echo "[INFO] Pull Request was created";
-      echo "[BUILD] Create Stack...";
+      # Pull Requests was created for develop to master
+      - |
+        if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+          figlet Master Pull Request Build;
 
-      create-change-set ${ENV};
-    fi
+          ENV=prod;
 
-  # Pull Requests was created for feature to develop
-  - |
-    if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-      figlet Develop Pull Request Build;
+          is-stack-created ${ENV};
+          echo "[INFO] Pull Request was created";
+          echo "[BUILD] Create Stack...";
 
-      ENV=dev;
+          create-change-set ${ENV};
+        fi
 
-      is-stack-created ${ENV};
-      echo "[INFO] Pull Request was created";
-      echo "[BUILD] Create Stack...";
+      # Pull Requests was created for feature to develop
+      - |
+        if [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+          figlet Develop Pull Request Build;
 
-      create-change-set ${ENV};
-    fi
+          ENV=dev;
 
+          is-stack-created ${ENV};
+          echo "[INFO] Pull Request was created";
+          echo "[BUILD] Create Stack...";
 
-  #   ___  _   _ _  __   __  ____  _   _ ____  _   _ _____ ____
-  #  / _ \| \ | | | \ \ / / |  _ \| | | / ___|| | | | ____|  _ \
-  # | | | |  \| | |  \ V /  | |_) | | | \___ \| |_| |  _| | | | |
-  # | |_| | |\  | |___| |   |  __/| |_| |___) |  _  | |___| |_| |
-  #  \___/|_| \_|_____|_|   |_|    \___/|____/|_| |_|_____|____/
+          create-change-set ${ENV};
+        fi
 
-  # Feature branch was pushed
-  - |
-    if [ "$TRAVIS_BRANCH" != "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      echo "[INFO] Only Pushed";
-      echo "[INFO] Nothing to do";
-      echo "[INFO] Feature branch was pushed";
-      echo "[INFO] Nothing to do anything";
-    fi
+    - stage: only pushed
+      script:
+
+      #   ___  _   _ _  __   __  ____  _   _ ____  _   _ _____ ____
+      #  / _ \| \ | | | \ \ / / |  _ \| | | / ___|| | | | ____|  _ \
+      # | | | |  \| | |  \ V /  | |_) | | | \___ \| |_| |  _| | | | |
+      # | |_| | |\  | |___| |   |  __/| |_| |___) |  _  | |___| |_| |
+      #  \___/|_| \_|_____|_|   |_|    \___/|____/|_| |_|_____|____/
+
+      # Feature branch was pushed
+      - |
+        if [ "$TRAVIS_BRANCH" != "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+          echo "[INFO] Only Pushed";
+          echo "[INFO] Nothing to do";
+          echo "[INFO] Feature branch was pushed";
+          echo "[INFO] Nothing to do anything";
+        fi
 
 after_success:
   - coveralls
