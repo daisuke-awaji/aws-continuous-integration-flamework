@@ -111,6 +111,13 @@ script:
       figlet Master Pull Request Build;
 
       ENV=prod;
+
+      stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
+      if [ "${stack}" = "" ]; then
+          echo "[ERROR] stack is not exist.";
+          exit 0
+      fi
+
       echo "[INFO] Pull Request was created";
       echo "[BUILD] Create Stack...";
       DATE=$(date +"%Y%m%d%H%M%S");
@@ -130,6 +137,13 @@ script:
       figlet Develop Pull Request Build;
 
       ENV=dev;
+
+      stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
+      if [ "${stack}" = "" ]; then
+          echo "[ERROR] stack is not exist.";
+          exit 0
+      fi
+
       echo "[INFO] Pull Request was created";
       echo "[BUILD] Create Stack...";
       DATE=$(date +"%Y%m%d%H%M%S");
