@@ -26,6 +26,18 @@ before_install:
   - export PATH="$PATH:/usr/local/packer"
   - packer --version
   - cd /home/travis/build/daisuke-awaji/aws/
+  # Define functions
+  # Check the target stack has benn created?
+  - describe-stacks() {
+      ENV=$1
+      stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
+      if [ "${stack}" = "" ]; then
+          echo "[ERROR] stack is not exist.";
+          exit 0
+      fi
+    }
+
+
 
 script:
 
@@ -112,11 +124,7 @@ script:
 
       ENV=prod;
 
-      stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
-      if [ "${stack}" = "" ]; then
-          echo "[ERROR] stack is not exist.";
-          exit 0
-      fi
+      describe-stacks ${ENV};
 
       echo "[INFO] Pull Request was created";
       echo "[BUILD] Create Stack...";
