@@ -21,14 +21,6 @@ create-change-set() {
       --region ${AWS_REGION};
 }
 
-packer-build() {
-  packer build ./middleware/template.json >> out.log;
-  cat out.log;
-  AMIID=`cat out.log | tail -2 | head -2 | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH) }'`;
-  echo ${AMIID};
-  return ${AMIID};
-}
-
 cloudformation-deploy() {
   ENV=$1
   AMIID=$2
