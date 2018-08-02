@@ -1,0 +1,8 @@
+describe-stacks() {
+  ENV=$1
+  stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
+  if [ "${stack}" = "" ]; then
+    echo "[ERROR] stack is not exist.";
+    exit 0
+  fi
+}
