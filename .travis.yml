@@ -60,7 +60,7 @@ script:
 
       echo "[INFO] Master branch was pushed or marged by feature branches";
       echo "[BUILD] Packer build.";
-      AMIID=packer-build
+      AMIID=$(packer-build)
 
       echo "[BUILD] Deploy Stack...";
       cloudformation-deploy ${ENV} ${AMIID}
@@ -75,7 +75,7 @@ script:
 
       echo "[INFO] Develop branch was pushed or marged by feature branches";
       echo "[BUILD] Packer build. Create AMI.";
-      AMIID=packer-build
+      AMIID=$(packer-build)
 
       echo "[BUILD] Deploy Stack...";
       cloudformation-deploy ${ENV} ${AMIID}
