@@ -28,10 +28,6 @@ before_install:
   - export PATH="$PATH:/usr/local/packer"
   - packer --version
   - cd /home/travis/build/daisuke-awaji/aws/
-  # define functions
-  # Check the target stack has benn created?
-  - source .circ
-  - cat .circ
 
 jobs:
   include:
@@ -74,7 +70,13 @@ jobs:
           echo ${AMIID};
 
           echo "[BUILD] Deploy Stack...";
-          cloudformation-deploy ${ENV} ${AMIID};
+          aws cloudformation deploy \
+              --template-file=./cloudformation/template.yaml \
+              --stack-name ${ENV} \
+              --parameter-overrides Environment=${ENV} \
+              --parameter-overrides WebInstanceAMI=${AMIID} \
+              --capabilities CAPABILITY_IAM \
+              --region ${AWS_REGION};
         fi
 
       # Develop branch was pushed or marged by feature branches
@@ -92,7 +94,14 @@ jobs:
           echo ${AMIID};
 
           echo "[BUILD] Deploy Stack...";
-          cloudformation-deploy ${ENV} ${AMIID};
+
+          aws cloudformation deploy \
+              --template-file=./cloudformation/template.yaml \
+              --stack-name ${ENV} \
+              --parameter-overrides Environment=${ENV} \
+              --parameter-overrides WebInstanceAMI=${AMIID} \
+              --capabilities CAPABILITY_IAM \
+              --region ${AWS_REGION};
         fi
 
     - stage: pull request created / Create change set
@@ -111,11 +120,23 @@ jobs:
 
           ENV=prod;
 
-          is-stack-created ${ENV};
-          echo "[INFO] Pull Request was created";
-          echo "[BUILD] Create Stack...";
+          stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
+          if [ "${stack}" = "" ]; then
+            echo "[ERROR] Stack ${ENV} is not exist.";
+            exit 0
+          fi
 
-          create-change-set ${ENV};
+          echo "[INFO] Pull Request was created";
+          echo "[BUILD] Create Change set for Stack...";
+
+          DATE=$(date +"%Y%m%d%H%M%S");
+          aws cloudformation create-change-set \
+                --template-body file://cloudformation/template.yaml \
+                --change-set-name "change-set-${DATE}" \
+                --stack-name ${ENV} \
+                --parameters ParameterKey=Environment,ParameterValue=${ENV} \
+                --capabilities CAPABILITY_IAM \
+                --region ${AWS_REGION};
         fi
 
       # Pull Requests was created for feature to develop
@@ -125,11 +146,23 @@ jobs:
 
           ENV=dev;
 
-          is-stack-created ${ENV};
-          echo "[INFO] Pull Request was created";
-          echo "[BUILD] Create Stack...";
+          stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
+          if [ "${stack}" = "" ]; then
+            echo "[ERROR] Stack ${ENV} is not exist.";
+            exit 0
+          fi
 
-          create-change-set ${ENV};
+          echo "[INFO] Pull Request was created";
+          echo "[BUILD] Create Change set for Stack...";
+
+          DATE=$(date +"%Y%m%d%H%M%S");
+          aws cloudformation create-change-set \
+                --template-body file://cloudformation/template.yaml \
+                --change-set-name "change-set-${DATE}" \
+                --stack-name ${ENV} \
+                --parameters ParameterKey=Environment,ParameterValue=${ENV} \
+                --capabilities CAPABILITY_IAM \
+                --region ${AWS_REGION};
         fi
 
     - stage: only pushed / nothing to do
