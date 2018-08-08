@@ -348,7 +348,7 @@ Resources:
         - !Ref ALBTargetGroup
       Tags:
         - Key: Name
-          Value: ${Environment}-web
+          Value: !Sub ${Environment}-web
           PropagateAtLaunch: 'true'
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -383,7 +383,7 @@ Resources:
         - !Ref ALBTargetGroup
       Tags:
         - Key: Name
-          Value: ${Environment}-web-spot
+          Value: !Sub ${Environment}-web-spot
           PropagateAtLaunch: 'true'
   SpotInstanceLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
