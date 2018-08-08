@@ -341,9 +341,9 @@ Resources:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
       LaunchConfigurationName: !Ref LaunchConfig
-      MinSize: 2
+      MinSize: 1
       MaxSize: 5
-      DesiredCapacity: 2
+      DesiredCapacity: 1
       TargetGroupARNs:
         - !Ref ALBTargetGroup
       Tags:
