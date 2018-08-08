@@ -1,0 +1,34 @@
+## Defined Functions
+
+is-stack-created() {
+  ENV=$1
+  stack=`aws cloudformation describe-stacks | jq '.Stacks[] | select(.StackName == "${ENV}")'`;
+  if [ "${stack}" = "" ]; then
+    echo "[ERROR] Stack ${ENV} is not exist.";
+    exit 0
+  fi
+}
+
+create-change-set() {
+  ENV=$1;
+  DATE=$(date +"%Y%m%d%H%M%S");
+  aws cloudformation create-change-set \
+      --template-body file://cloudformation/template.yaml \
+      --change-set-name "change-set-${DATE}" \
+      --stack-name ${ENV} \
+      --parameters ParameterKey=Environment,ParameterValue=${ENV} \
+      --capabilities CAPABILITY_IAM \
+      --region ${AWS_REGION};
+}
+
+cloudformation-deploy() {
+  ENV=$1
+  AMIID=$2
+  aws cloudformation deploy \
+      --template-file=./cloudformation/template.yaml \
+      --stack-name ${ENV} \
+      --parameter-overrides Environment=${ENV} \
+      --parameter-overrides WebInstanceAMI=${AMIID} \
+      --capabilities CAPABILITY_IAM \
+      --region ${AWS_REGION};
+}

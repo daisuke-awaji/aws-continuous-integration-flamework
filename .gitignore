@@ -9,4 +9,7 @@ cloudformation/.idea/
 cloudformation/.pytest_cache/*
 .idea/*
 cloudformation/tests/__pycache__/*
-	
+
+.coverage
+.pytest_cache/*
+htmlcov/*

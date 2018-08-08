@@ -9,7 +9,6 @@ Parameters:
   Environment:
     Description: An environment name that will be prefixed to resource names
     Type: String
-    Default: dev
     AllowedValues:
       - dev
       - prod
@@ -54,7 +53,7 @@ Resources:
         Day:
           Type: Schedule
           Properties:
-            Schedule: cron(0 22 * * ? *)
+            Schedule: cron(0 13 * * ? *)
 
   StackDeleteNoticeIAMRole:
     Type: 'AWS::IAM::Role'

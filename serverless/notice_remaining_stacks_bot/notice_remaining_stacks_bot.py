@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     num_of_stacks = len(stacks)
 
     # 除外するスタック
-    exclude_stacks = ["arn:aws:cloudformation:us-east-1:703976800898:stack/delete-stack-bot/ff5192c0-940a-11e8-ae7b-503acac41e99"]
+    exclude_stacks = ["arn:aws:cloudformation:us-east-1:703976800898:stack/serverless-apps/81fc05a0-94bc-11e8-9585-50d5ca63268e"]
     for stack in stacks:
         print(stack["StackId"])
         if stack["StackId"] in exclude_stacks:
@@ -58,5 +58,3 @@ def send_slack(message, username='satomi', emoji=':exclamation:'):
     except:
         print('Slack connection failed. Valid webhook?')
         return None
-
-lambda_handler("", "")

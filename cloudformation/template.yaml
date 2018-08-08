@@ -23,6 +23,9 @@ Conditions:
 
 Mappings:
   StackConfig:
+    DNS:
+      # https://my.freenom.com/cart.php?a=confdomains
+      FreenomDomain: "geeawa.ga"
     # Default Instance Amazon Linux
     EC2:
       ImageId: ami-b70554c8
@@ -36,6 +39,13 @@ Resources:
   # |  \| |  _|   | |  \ \ /\ / / | | | |_) | ' /
   # | |\  | |___  | |   \ V  V /| |_| |  _ <| . \
   # |_| \_|_____| |_|    \_/\_/  \___/|_| \_\_|\_\
+
+  # DNS:
+  #   Type: "AWS::Route53::HostedZone"
+  #   Properties:
+  #     HostedZoneConfig:
+  #       Comment: "My hosted zone"
+  #     Name: !FindInMap [ StackConfig, DNS, FreenomDomain ]
 
   VPC:
     Type: AWS::EC2::VPC
@@ -334,7 +344,7 @@ Resources:
         - !Ref PrivateSubnet2
       LaunchConfigurationName: !Ref LaunchConfig
       MinSize: 1
-      MaxSize: 1
+      MaxSize: 5
       DesiredCapacity: 1
       TargetGroupARNs:
         - !Ref ALBTargetGroup
@@ -363,7 +373,6 @@ Resources:
 
   SpotInstanceWebServerGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
-    Condition: CreateProdResources
     Properties:
       VPCZoneIdentifier:
         - !Ref PrivateSubnet1
@@ -380,7 +389,6 @@ Resources:
           PropagateAtLaunch: 'true'
   SpotInstanceLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
-    Condition: CreateProdResources
     Properties:
       ImageId: !Ref WebInstanceAMI
       SecurityGroups:
@@ -391,7 +399,6 @@ Resources:
 
   SpotInstanceWebServerScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
-    Condition: CreateProdResources
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref SpotInstanceWebServerGroup
@@ -399,7 +406,6 @@ Resources:
       ScalingAdjustment: 1
   SpotInstanceWebServerScaleDownPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
-    Condition: CreateProdResources
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref SpotInstanceWebServerGroup
@@ -407,15 +413,14 @@ Resources:
       ScalingAdjustment: -1
   SpotInstanceCPUAlarmHigh:
     Type: AWS::CloudWatch::Alarm
-    Condition: CreateProdResources
     Properties:
       AlarmDescription: Scale-up if CPU > 90% for 10 minutes
       MetricName: CPUUtilization
       Namespace: AWS/EC2
       Statistic: Average
-      Period: 300
-      EvaluationPeriods: 2
-      Threshold: 90
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 60
       AlarmActions:
       - !Ref SpotInstanceWebServerScaleUpPolicy
       Dimensions:
@@ -424,15 +429,14 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
   SpotInstanceCPUAlarmLow:
     Type: AWS::CloudWatch::Alarm
-    Condition: CreateProdResources
     Properties:
       AlarmDescription: Scale-down if CPU < 70% for 10 minutes
       MetricName: CPUUtilization
       Namespace: AWS/EC2
       Statistic: Average
-      Period: 300
-      EvaluationPeriods: 2
-      Threshold: 70
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 40
       AlarmActions:
       - !Ref SpotInstanceWebServerScaleDownPolicy
       Dimensions:
@@ -498,14 +502,21 @@ Resources:
   # Route53 (CNAME)
   # InternalRecordset:
   #   Type: 'AWS::Route53::RecordSetGroup'
+  #   DependsOn: DNS
   #   Properties:
-  #     HostedZoneName: "example.com."
+  #     # geeawa.ga.
+  #     HostedZoneName: !Sub
+  #                       - ${Domain}.
+  #                       - { Domain: !FindInMap [ StackConfig, DNS, FreenomDomain ] }
   #     RecordSets:
-  #     - Name: example.com
-  #       Type: CNAME
-  #       TTL: '300'
-  #       ResourceRecords:
-  #         - !GetAtt ApplicationLoadBalancer.DNSName
+  #       # stg.geeawa.ga
+  #       - Name: !Join
+  #                 - "."
+  #                 - [ !Ref Environment, !FindInMap [ StackConfig, DNS, FreenomDomain ]]
+  #         Type: CNAME
+  #         TTL: '300'
+  #         ResourceRecords:
+  #           - !GetAtt ApplicationLoadBalancer.DNSName
 
 Outputs:
   VPC:
