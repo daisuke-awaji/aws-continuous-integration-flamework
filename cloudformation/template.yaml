@@ -10,13 +10,11 @@ Parameters:
   Environment:
     Description: An environment name that will be prefixed to resource names
     Type: String
-    Default: dev
     AllowedValues:
       - dev
       - prod
   WebInstanceAMI:
     Type: AWS::EC2::Image::Id
-    Default: ami-b70554c8
 
 Conditions:
   CreateProdResources: !Equals [ !Ref Environment, prod ]
@@ -350,7 +348,7 @@ Resources:
         - !Ref ALBTargetGroup
       Tags:
         - Key: Name
-          Value: web
+          Value: ${Environment}-web
           PropagateAtLaunch: 'true'
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -385,7 +383,7 @@ Resources:
         - !Ref ALBTargetGroup
       Tags:
         - Key: Name
-          Value: web
+          Value: ${Environment}-web-spot
           PropagateAtLaunch: 'true'
   SpotInstanceLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
