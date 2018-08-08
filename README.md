@@ -17,6 +17,8 @@ It triggers that the source code is pushed to the following branch.
 - develop: deploy in "dev" environment
 - master: deploy to "prod" environment
 
+![branch](draw.io/branch.png)
+
 ## Usage
 
 First of all, work on the develop branch and make sure that the behavior of Cloudformation and Ansible is OK on the dev environment. Pushing the develop branch to Github will automatically create the environment.
