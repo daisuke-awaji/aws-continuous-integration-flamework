@@ -356,7 +356,7 @@ Resources:
       ImageId: !Ref WebInstanceAMI
       SecurityGroups:
         - !Ref PrivateSecurityGroup
-      InstanceType: t2.micro
+      InstanceType: t2.medium
       KeyName: !FindInMap [ StackConfig, KeyPair, KeyPairName ]
       # Prodcution環境ではオンデマンドインスタンスを採用する
       # それ以外の環境ではスポットインスタンスを使用する
